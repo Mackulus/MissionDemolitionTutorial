@@ -2,7 +2,7 @@
 using UnityEngine;
 
 public class Slingshot : MonoBehaviour {
-
+	static private Slingshot S;
 	//fields set in the Unity Inspector Pane
 	[Header("Set in Inspector")]
 	public GameObject prefabProjectile;
@@ -14,12 +14,22 @@ public class Slingshot : MonoBehaviour {
 	public Vector3 launchPos;
 	public GameObject projectile;
 	public bool aimingMode;
+	public bool shotFiredRecently = false;
 
 	private Rigidbody projectileRigidbody;
 
+	static public Vector3 LAUNCH_POS
+	{
+		get
+		{
+			if (S == null) return Vector3.zero;
+			return S.launchPos;
+		}
+	}
 
 	void Awake()
 	{
+		S = this;
 		Transform launchPointTrans = transform.Find("LaunchPoint");
 		launchPoint = launchPointTrans.gameObject;
 		launchPoint.SetActive(false);
@@ -59,7 +69,16 @@ public class Slingshot : MonoBehaviour {
 			projectileRigidbody.velocity = -mouseDelta * velocityMult;
 			FollowCam.POI = projectile;
 			projectile = null;
+			MissionDemolition.ShotFired();
+			ProjectileLine.S.poi = projectile;
+			shotFiredRecently = true;
+			Invoke("ShotCanBeFired", 3f);
 		}
+	}
+
+	void ShotCanBeFired()
+	{
+		shotFiredRecently = false;
 	}
 
 	void OnMouseEnter()
@@ -76,6 +95,7 @@ public class Slingshot : MonoBehaviour {
 
 	void OnMouseDown()
 	{
+		if (shotFiredRecently) return;
 		//The player has pressed the mouse button while over Slingshot
 		aimingMode = true;
 		//Instantiate a projectile
